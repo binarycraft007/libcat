@@ -7,7 +7,7 @@
 .vscode
 
 # builder
-build*
+# build*
 out
 CMakeSettings.json
 *.la
@@ -29,3 +29,6 @@ debug
 **/.cache
 **/compile_commands.json
 **/compile_flags.txt
+
+zig-out
+zig-cache

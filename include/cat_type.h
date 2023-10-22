@@ -46,6 +46,7 @@ typedef enum cat_ret_e {
 
 static cat_always_inline const char *cat_ret_str(cat_ret_t ret)
 {
+    char *msg = "Unknown return value";
     switch (ret) {
         case CAT_RET_ERROR:
             return "ERROR";
@@ -54,7 +55,7 @@ static cat_always_inline const char *cat_ret_str(cat_ret_t ret)
         case CAT_RET_OK:
             return "OK";
         default:
-            CAT_NEVER_HERE("Unknown return value");
+            CAT_NEVER_HERE(msg);
     }
 }
 

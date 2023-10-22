@@ -28,6 +28,19 @@
 #endif // CAT_OS_WIN
 
 #ifdef CAT_OS_WIN
+extern NTSTATUS NTAPI NtQueryDirectoryFile (
+    HANDLE,
+    HANDLE,
+    PVOID, 
+    PVOID,
+    PVOID,
+    PVOID,
+    ULONG,
+    FILE_INFORMATION_CLASS,
+    BOOLEAN,
+    PVOID,
+    BOOLEAN
+);
 # ifdef _WIN64
 #  define fseeko _fseeki64
 #  define ftello _ftelli64
@@ -1606,37 +1619,6 @@ typedef struct cat_fs_readdir_data_s {
 static void cat_fs_readdir_cb(cat_data_t *ptr)
 {
     cat_fs_readdir_data_t *data = (cat_fs_readdir_data_t *) ptr;
-    static __kernel_entry NTSTATUS (*pNtQueryDirectoryFile)(HANDLE,
-        HANDLE, PVOID, PVOID, PVOID, PVOID, ULONG, FILE_INFORMATION_CLASS,
-        BOOLEAN, PVOID, BOOLEAN) = NULL;
-    if (NULL == pNtQueryDirectoryFile) {
-        if (NULL == hntdll) {
-            cat_fs_proventdll();
-            if (NULL == hntdll) {
-                data->ret.error.msg_free = CAT_FS_FREER_NONE;
-                data->ret.error.msg = "Cannot open ntdll.dll on finding NtQueryDirectoryFile in readdir";
-                data->ret.error.type = CAT_FS_ERROR_WIN32;
-                data->ret.error.val.error = GetLastError();
-                return;
-            }
-        }
-#ifdef _MSC_VER /* FIXME: workaround for MSVC bug */
-# pragma warning(disable:4191)
-#endif
-        pNtQueryDirectoryFile = (NTSTATUS (*)(HANDLE, HANDLE, PVOID, PVOID, PVOID, PVOID, ULONG, FILE_INFORMATION_CLASS, BOOLEAN, PVOID, BOOLEAN))
-            GetProcAddress(hntdll, "NtQueryDirectoryFile");
-#ifdef _MSC_VER /* FIXME: workaround for MSVC bug */
-# pragma warning(default:4191)
-#endif
-        if (NULL == pNtQueryDirectoryFile) {
-            data->ret.error.msg_free = CAT_FS_FREER_NONE;
-            data->ret.error.msg = "Cannot find NtQueryDirectoryFile in readdir";
-            data->ret.error.type = CAT_FS_ERROR_WIN32;
-            data->ret.error.val.error = GetLastError();
-            return;
-        }
-    }
-
     IO_STATUS_BLOCK iosb = {0};
     NTSTATUS status;
 # if _MSC_VER
@@ -1644,8 +1626,8 @@ static void cat_fs_readdir_cb(cat_data_t *ptr)
 # else
     __attribute__ ((aligned (8)))
 # endif // _MSC_VER
-        char buffer[8192];
-    status = pNtQueryDirectoryFile(
+    char buffer[8192];
+    status = NtQueryDirectoryFile(
         data->dir.dir, // file handle
         NULL, // whatever
         NULL, // whatever
